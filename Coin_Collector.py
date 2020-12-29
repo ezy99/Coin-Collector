@@ -291,6 +291,7 @@ class MyGame(arcade.Window):
         left_boundary = self.view_left + VIEWPORT_MARGIN
         bottom_boundary = self.view_bottom + VIEWPORT_MARGIN
         arcade.draw_text(output, left_boundary - 25, bottom_boundary - 17, arcade.color.COSMIC_LATTE, 16)
+        arcade.draw_text( "Goal: 50", left_boundary - 25, bottom_boundary, arcade.color.COSMIC_LATTE, 16)
 
 def main():
     """ Main method """
