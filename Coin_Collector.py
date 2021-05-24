@@ -24,8 +24,14 @@ GRAVITY = .9 * SPRITE_SCALING
 RIGHT_FACING = 0
 LEFT_FACING = 1
 
-#set number of coins
+# Set number of coins
 NUMBER_OF_COINS = 50
+
+# The states of the game.
+INSTRUCTIONS_PAGE_0 = 0
+INSTRUCTIONS_PAGE_1 = 1
+GAME_RUNNING = 2
+GAME_OVER = 3
 
 def load_texture_pair(filename):
     """
@@ -89,14 +95,10 @@ class PlayerCharacter(arcade.Sprite):
         direction = self.character_face_direction
         self.texture = self.walk_textures[frame][direction]
 
-
 class MyGame(arcade.Window):
     """ Main application class. """
 
     def __init__(self, width, height, title):
-        """
-        Initializer
-        """
         super().__init__(width, height, title)
 
         # Set the working directory (where we expect to find files) to the same
@@ -112,9 +114,19 @@ class MyGame(arcade.Window):
 
         self.physics_engine = None
 
+        # Start 'state' will be showing the first page of instructions.
+        self.current_state = INSTRUCTIONS_PAGE_0
+
         # Used in scrolling
         self.view_bottom = 0
         self.view_left = 0
+
+        self.instructions = []
+        texture = arcade.load_texture(":resources:images/backgrounds/instructions_0.png")
+        self.instructions.append(texture)
+
+        texture = arcade.load_texture(":resources:images/backgrounds/instructions_1.png")
+        self.instructions.append(texture)
 
     def setup(self):
         """ Set up the game and initialize the variables. """
@@ -198,6 +210,55 @@ class MyGame(arcade.Window):
         self.view_left = 0
         self.view_bottom = 0
 
+    def draw_instructions_page(self, page_number):
+        """
+        Draw an instruction page. Load the page as an image.
+        """
+        page_texture = self.instructions[page_number]
+        arcade.draw_texture_rectangle(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2,
+                                      page_texture.width,
+                                      page_texture.height, page_texture, 0)
+
+    def draw_game(self):
+        """Render the screen"""
+        # Draw all the sprites.
+        self.wall_list.draw()
+        self.player_list.draw()
+        self.coin_list.draw()
+
+        # Put the text on the screen.
+        output = f"Score: {self.score}"
+        left_boundary = self.view_left + VIEWPORT_MARGIN
+        bottom_boundary = self.view_bottom + VIEWPORT_MARGIN
+        arcade.draw_text(output, left_boundary - 25, bottom_boundary - 17, arcade.color.COSMIC_LATTE, 16)
+        arcade.draw_text("Goal: 50", left_boundary - 25, bottom_boundary, arcade.color.COSMIC_LATTE, 16)
+
+    def draw_game_over(self):
+        arcade.draw_rectangle_filled(450, 400, 700, 300, arcade.color.CHARLESTON_GREEN)
+
+        output = "Well Done!"
+        arcade.draw_text(output, 240, 400, arcade.color.WHITE, 74)
+
+        output = "Click to play again"
+        arcade.draw_text(output, 200, 300, arcade.color.WHITE, 60)
+
+    def on_draw(self):
+        # This command has to happen before we start drawing
+        arcade.start_render()
+
+        if self.current_state == INSTRUCTIONS_PAGE_0:
+            self.draw_instructions_page(0)
+
+        elif self.current_state == INSTRUCTIONS_PAGE_1:
+            self.draw_instructions_page(1)
+
+        elif self.current_state == GAME_RUNNING:
+            self.draw_game()
+
+        else:
+            self.draw_game()
+            self.draw_game_over()
+
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
 
@@ -214,6 +275,21 @@ class MyGame(arcade.Window):
 
         if key == arcade.key.LEFT or key == arcade.key.RIGHT:
             self.player_sprite.change_x = 0
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        # Press the left mouse key to change the state of the game
+
+        if self.current_state == INSTRUCTIONS_PAGE_0:
+            # Next page of instructions.
+            self.current_state = INSTRUCTIONS_PAGE_1
+        elif self.current_state == INSTRUCTIONS_PAGE_1:
+            # Start the game
+            self.setup()
+            self.current_state = GAME_RUNNING
+        elif self.current_state == GAME_OVER:
+            # Restart the game.
+            self.setup()
+            self.current_state = GAME_RUNNING
 
     def on_update(self, delta_time):
         """ Movement and game logic """
@@ -274,31 +350,15 @@ class MyGame(arcade.Window):
                                 SCREEN_WIDTH + self.view_left,
                                 self.view_bottom,
                                 SCREEN_HEIGHT + self.view_bottom)
-    def on_draw(self):
-        """
-        Render the screen.
-        """
-
-        arcade.start_render()
-
-        # Draw all the sprites.
-        self.wall_list.draw()
-        self.player_list.draw()
-        self.coin_list.draw()
-
-        # Put the text on the screen.
-        output = f"Score: {self.score}"
-        left_boundary = self.view_left + VIEWPORT_MARGIN
-        bottom_boundary = self.view_bottom + VIEWPORT_MARGIN
-        arcade.draw_text(output, left_boundary - 25, bottom_boundary - 17, arcade.color.COSMIC_LATTE, 16)
-        arcade.draw_text( "Goal: 50", left_boundary - 25, bottom_boundary, arcade.color.COSMIC_LATTE, 16)
+        if len(self.coin_list) == 0:
+            self.current_state = GAME_OVER
+            self.set_mouse_visible(True)
 
 def main():
     """ Main method """
     window = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
     window.setup()
     arcade.run()
-
 
 if __name__ == "__main__":
     main()
