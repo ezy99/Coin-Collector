@@ -122,6 +122,7 @@ class MyGame(arcade.Window):
         self.view_left = 0
 
         self.instructions = []
+        # Instruction images are uploaded in the file, you can still run the code free of error without any instruction images
         texture = arcade.load_texture(":resources:images/backgrounds/instructions_0.png")
         self.instructions.append(texture)
 
